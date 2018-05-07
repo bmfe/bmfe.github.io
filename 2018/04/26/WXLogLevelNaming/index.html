@@ -8,18 +8,24 @@
   <link rel="dns-prefetch" href="http://yoursite.com">
   <title>解决iOS WeexSDK与WechatSDK中枚举WXLogLevel命名冲突 | Hexo</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="最近将 WechatOpenSDK 升级到 1.8.2 版本，然后编译工程发现报了一个错，如下图">
+  <meta name="description" content="如果你在使用WeexSDK开发 iOS App，并用到微信相关功能，应该会遇到和我同样的问题，WXLogLevel 命名冲突，编译报错如下图；">
 <meta name="keywords" content="weex,iOS">
 <meta property="og:type" content="article">
 <meta property="og:title" content="解决iOS WeexSDK与WechatSDK中枚举WXLogLevel命名冲突">
 <meta property="og:url" content="http://yoursite.com/2018/04/26/WXLogLevelNaming/index.html">
 <meta property="og:site_name" content="Hexo">
-<meta property="og:description" content="最近将 WechatOpenSDK 升级到 1.8.2 版本，然后编译工程发现报了一个错，如下图">
+<meta property="og:description" content="如果你在使用WeexSDK开发 iOS App，并用到微信相关功能，应该会遇到和我同样的问题，WXLogLevel 命名冲突，编译报错如下图；">
 <meta property="og:locale" content="default">
-<meta property="og:updated_time" content="2018-05-02T04:06:58.197Z">
+<meta property="og:image" content="http://yoursite.com/2018/04/26/WXLogLevelNaming/WX20180502-104128.png">
+<meta property="og:image" content="http://yoursite.com/2018/04/26/WXLogLevelNaming/WX20180503-145957.png">
+<meta property="og:image" content="http://yoursite.com/2018/04/26/WXLogLevelNaming/WX20180503-160957.png">
+<meta property="og:image" content="http://yoursite.com/2018/04/26/WXLogLevelNaming/WX20180507-180758.png">
+<meta property="og:image" content="http://yoursite.com/2018/04/26/WXLogLevelNaming/WX20180507-182147.png">
+<meta property="og:updated_time" content="2018-05-07T10:26:39.567Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="解决iOS WeexSDK与WechatSDK中枚举WXLogLevel命名冲突">
-<meta name="twitter:description" content="最近将 WechatOpenSDK 升级到 1.8.2 版本，然后编译工程发现报了一个错，如下图">
+<meta name="twitter:description" content="如果你在使用WeexSDK开发 iOS App，并用到微信相关功能，应该会遇到和我同样的问题，WXLogLevel 命名冲突，编译报错如下图；">
+<meta name="twitter:image" content="http://yoursite.com/2018/04/26/WXLogLevelNaming/WX20180502-104128.png">
   
     <link rel="alternative" href="/atom.xml" title="Hexo" type="application/atom+xml">
   
@@ -161,8 +167,25 @@
     
     <div class="article-entry" itemprop="articleBody">
       
-        <p>最近将 WechatOpenSDK 升级到 1.8.2 版本，然后编译工程发现报了一个错，如下图</p>
+        <p>如果你在使用<code>WeexSDK</code>开发 iOS App，并用到微信相关功能，应该会遇到和我同样的问题，WXLogLevel 命名冲突，编译报错如下图；</p>
 <a id="more"></a>
+<p><img src="/2018/04/26/WXLogLevelNaming/WX20180502-104128.png" alt="报错"></p>
+<p>如果你没遇到这个问题，说明你的<code>WeChatOpenSDK</code>版本较低，在升级了<code>WechatOpenSDK 1.8.2</code>版本后出现的这个问题，微信在新的sdk 中的 <code>WXApiObject.h</code> 与 WeexSDK 中 <code>WXLog.h</code>定义了命名相同的枚举值 – <code>WXLogLevel</code></p>
+<p><img src="/2018/04/26/WXLogLevelNaming/WX20180503-145957.png" alt="WXLog.h"></p>
+<p>遇到这个问题，二者只能修改其一了，WeChatOpenSDK 提供的是静态库，无法修改，好在 WeexSDK 是开源的，我们一直以来也是通过源码依赖的，所以打算将 WeexSDK 中 WXLogLevel 重命名为 WeexLogLevel，为了避免漏改，建议在 WeexSDK 文件夹中全局搜索替换一下</p>
+<p><img src="/2018/04/26/WXLogLevelNaming/WX20180503-160957.png" alt="全局修改"></p>
+<p>然后将工程中用到 WXLogLevel 的地方也修改一下，大多开发者应该只有在 初始化 WeexSDK 的时候会设置一下 LogLevel <code>[WXLog setLogLevel:WeexLogLevelLog]</code>；</p>
+<p>重新编译运行，问题解决；</p>
+<p>如果仅仅就是这样，那么就不会有这篇文章了，有一种相对来说影响范围更小的解决方案，请继续往下看<br>为了避免之后每次升级WeexSDK，都需要修改一次，所以我打算给 <a href="https://github.com/apache/incubator-weex" target="_blank" rel="noopener">WeexSDK</a> 仓库提个 PR，希望以上的修改能被采纳，在提交之前和 Weex 官方的 iOS 开发大佬 <a href="https://github.com/acton393" target="_blank" rel="noopener">acton393</a> 交流了一下，大佬提供了一种通过添加一个宏定义，来减小影响范围的方法，如下图</p>
+<p><img src="/2018/04/26/WXLogLevelNaming/WX20180507-180758.png" alt="宏定义"></p>
+<p>修改WXLog.h 文件</p>
+<ol>
+<li>添加宏定义: <code>#define WXLogLevel WeexLogLevel</code></li>
+<li>将枚举命名 WXLogLevel 改为 WeexLogLevel</li>
+</ol>
+<p>这样的修改，就不需要改动其他使用到 WXLogLevel 的文件了，程序在编译阶段会将 WXLogLevel 替换为 WeexLogLevel，对于上层使用者，没有用到 微信SDK 的用户可以做到无感知；<br>但是有一点需要注意，对于使用了 微信SDK 的用户，一定要先引用 <code>WXApi.h</code> 然后在引用 <code>WXLog.h</code> 文件，如下图</p>
+<p><img src="/2018/04/26/WXLogLevelNaming/WX20180507-182147.png" alt="引用顺序"></p>
+<p>最终也是以这种方法的修改提交了 PR，又遇到同样问题的同学可以参考一下。<br>还是做 SDK 的大佬想的周全，膜拜一下；</p>
 
       
 
@@ -441,19 +464,19 @@ MathJax.Hub.Queue(function() {
           <ul class="article-tag-list" q-show="showTags">
              
               <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color5">weex</a>
-              </li>
-             
-              <li class="article-tag-list-item">
-                <a href="javascript:void(0)" class="js-tag color4">iOS</a>
-              </li>
-             
-              <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color4">vue</a>
               </li>
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">vuex</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">weex</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">iOS</a>
               </li>
             
             <div class="clearfix"></div>
